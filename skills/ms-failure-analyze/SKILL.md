@@ -262,15 +262,15 @@ First, search [Failure Showcase reference](references/failure-showcase.md) for m
 - **Fill `observed_at`** if it was empty — always record at least one concrete observation location
 
 **If no matching entry exists** — create a new entry (all fields required, `observed_at` must NOT be left empty):
-```yaml
+```
 - failure_info: "[error keywords/context]"
-  observed_at: "[file:function or test location where observed]"
-  backend: "ascend|gpu|cpu|all"
-  failure_type: "platform|scripts|framework|backend"
-  root_cause: "[specific cause]"
-  solution: "[actionable steps]"
-  last_seen: "[timestamp]"
-  occurrences: [count]
+- observed_at: "[file:function or test location where observed]"
+- backend: "ascend|gpu|cpu|all"
+- failure_type: "platform|scripts|framework|backend"
+- root_cause: "[specific cause]"
+- solution: "[actionable steps]"
+- last_seen: "[timestamp]"
+- occurrences: [count]
 ```
 
 ## Quick References
