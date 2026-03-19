@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Run regression evaluation for pta-failure-analyze skill.
 
 Executes regression evals by sending each prompt to Claude via `claude -p`
@@ -79,11 +79,11 @@ USER PROBLEM:
 ---
 
 Instructions:
-1. Follow Stage 0 → Stage 1 → Stage 2 from the skill above
-2. If you need reference files, try reading them from: {skill_dir}/references/
-3. Search failure-showcase.md at: {skill_dir}/references/failure-showcase.md
-4. Do NOT execute Stage 3 (do not modify any files)
-5. Provide complete analysis with: failure type, root cause, and solution
+1. Follow the skill workflow in order: evidence first, canonical facts, knowledge lookup, diagnosis, validation
+2. If you need local references, read them from: {skill_dir}/references/
+3. Use failure-showcase.md only as local fallback knowledge when external tooling is unavailable
+4. Do NOT modify any files or claim you updated knowledge sources
+5. Surface canonical facts, knowledge-hit status, ranked causes, validation checks, and fixes
 6. End with a validation question asking the user to verify
 """
 
@@ -510,3 +510,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

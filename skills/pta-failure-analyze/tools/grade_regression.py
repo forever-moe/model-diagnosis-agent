@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Grade regression eval transcripts against 5-layer assertions.
 
 Reads transcripts from a workspace directory and regression-evals.json,
@@ -23,7 +23,7 @@ BACKEND_SYNONYMS = {
 
 
 def grade_layer1(transcript_lower: str, assertions: dict) -> dict:
-    """Layer 1: Error identification — keyword match + backend match."""
+    """Layer 1: Error identification 鈥?keyword match + backend match."""
     l1 = assertions["layer1_identification"]
     keywords = l1["error_keywords"]
     found_kw = [kw for kw in keywords if kw.lower() in transcript_lower]
@@ -59,7 +59,7 @@ def grade_layer1(transcript_lower: str, assertions: dict) -> dict:
 
 
 def grade_layer2(transcript_lower: str, assertions: dict) -> dict:
-    """Layer 2: Classification — failure_type presence (with alias support)."""
+    """Layer 2: Classification 鈥?failure_type presence (with alias support)."""
     l2 = assertions["layer2_classification"]
     expected_type = l2["failure_type_expected"]
     aliases = [a.lower() for a in l2.get("failure_type_aliases", [])]
@@ -82,7 +82,7 @@ def grade_layer2(transcript_lower: str, assertions: dict) -> dict:
 
 
 def grade_layer3(transcript_lower: str, assertions: dict) -> dict:
-    """Layer 3: Root cause — keyword partial match."""
+    """Layer 3: Root cause 鈥?keyword partial match."""
     l3 = assertions["layer3_root_cause"]
     keywords = l3["keywords"]
     min_match = l3["keywords_match_min"]
@@ -100,7 +100,7 @@ def grade_layer3(transcript_lower: str, assertions: dict) -> dict:
 
 
 def grade_layer4(transcript_lower: str, assertions: dict) -> dict:
-    """Layer 4: Solution — keyword partial match."""
+    """Layer 4: Solution 鈥?keyword partial match."""
     l4 = assertions["layer4_solution"]
     keywords = l4["keywords"]
     min_match = l4["keywords_match_min"]
@@ -118,34 +118,59 @@ def grade_layer4(transcript_lower: str, assertions: dict) -> dict:
 
 
 def grade_layer5(transcript: str, transcript_lower: str) -> dict:
-    """Layer 5: Process compliance — showcase reference + validation question."""
-    showcase_keywords = [
+    """Layer 5: Process compliance for manual-skill behavior."""
+    knowledge_keywords = [
+        "known_failure", "known failure", "operator card", "operator cards",
         "failure showcase", "failure-showcase", "failure_showcase",
-        "showcase", "similar problem", "known issue", "historical",
-        "common pattern", "common error", "common failure",
-        "frequently seen", "typical error", "typical issue",
-        "previously seen", "encountered before", "known pattern",
-        "reference", "error pattern",
+        "showcase", "local reference", "historical failure", "known issue",
+        "known pattern", "reference", "similar problem",
     ]
-    showcase_ref = any(kw in transcript_lower for kw in showcase_keywords)
+    knowledge_ref = any(kw in transcript_lower for kw in knowledge_keywords)
 
     validation_keywords = [
         "resolve your issue", "did this resolve", "does this help",
         "verify in your environment", "confirm", "let me know",
         "try this", "please test", "check if", "did this fix",
         "verification", "please try", "try the above",
-        "work without", "work correctly",
-        "resolve the", "solve the issue", "fix the",
-        "still see", "still get", "still occur",
+        "work without", "work correctly", "still see", "still get",
+        "still occur", "validate", "please verify",
     ]
     validation_asked = any(kw in transcript_lower for kw in validation_keywords)
 
-    score = (0.5 if showcase_ref else 0.0) + (0.5 if validation_asked else 0.0)
+    mutation_keywords = [
+        "update failure-showcase", "update the failure-showcase",
+        "write to failure-showcase", "add this to failure-showcase",
+        "update the showcase", "write this to the showcase",
+        "submit to factory now", "i will submit a report",
+        "auto-submit", "automatically submit", "write back to",
+    ]
+    mutation_claimed = any(kw in transcript_lower for kw in mutation_keywords)
+
+    fabricated_lookup_keywords = [
+        "factory query result", "factory says", "factory returned",
+        "i queried factory", "the factory card says",
+    ]
+    fabricated_lookup = any(kw in transcript_lower for kw in fabricated_lookup_keywords)
+
+    manual_report_keywords = [
+        "manual report", "report suggestion", "knowledge candidate",
+        "manual knowledge candidate", "suggest a report",
+    ]
+    manual_report = any(kw in transcript_lower for kw in manual_report_keywords)
+
+    score = 0.0
+    score += 0.35 if knowledge_ref else 0.0
+    score += 0.35 if validation_asked else 0.0
+    score += 0.15 if not mutation_claimed else 0.0
+    score += 0.15 if not fabricated_lookup else 0.0
 
     return {
         "score": round(score, 3),
-        "showcase_referenced": showcase_ref,
+        "knowledge_referenced": knowledge_ref,
         "validation_asked": validation_asked,
+        "mutation_claimed": mutation_claimed,
+        "fabricated_lookup": fabricated_lookup,
+        "manual_report_suggested": manual_report,
     }
 
 
@@ -203,9 +228,14 @@ def grade_eval(transcript: str, eval_entry: dict) -> dict:
             "evidence": f"Keywords found: {l4['keywords_found']} of {l4['keywords_expected']}",
         },
         {
-            "text": "L5: Process compliance (showcase ref + validation question)",
+            "text": "L5: Process compliance (knowledge ref, validation, no mutation/fabrication)",
             "passed": l5["score"] >= 0.5,
-            "evidence": f"showcase_ref={l5['showcase_referenced']}; validation_asked={l5['validation_asked']}",
+            "evidence": (
+                f"knowledge_ref={l5['knowledge_referenced']}; "
+                f"validation_asked={l5['validation_asked']}; "
+                f"mutation_claimed={l5['mutation_claimed']}; "
+                f"fabricated_lookup={l5['fabricated_lookup']}"
+            ),
         },
     ]
 
@@ -400,3 +430,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

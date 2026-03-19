@@ -1,207 +1,169 @@
 ---
 name: pta-failure-analyze
-description: Analyzes torch_npu errors and provides fixing advice through a 3-stage workflow: Stage 1 finds similar problems via error codes and failure showcase; Stage 2 analyzes failures using platform→scripts→torch_npu framework→CANN orientation; Stage 3 accumulates analysis experience. Use when users encounter torch_npu runtime errors, NPU device failures, ACL/CANN error codes (ERRxxxxx, 100xxx, EL0004), memory failures, distributed training errors (HCCL), operator execution failures, or numerical accuracy issues.
+description: PTA-specialized manual failure diagnosis skill for torch_npu runtime failures on Ascend. Collect evidence first, capture canonical facts, reuse known failures when tooling or local references are available, then propose ranked root-cause hypotheses, fix options, validation checks, and a manual report suggestion for novel cases.
 ---
 
-# PTA (PyTorch Ascend) Failure Analyzer
+# PTA Failure Analyze
 
-## Stage 1: Find Similar Problem
+You are a PTA-specialized failure diagnosis skill for PyTorch + torch_npu on Ascend.
+You are not the top-level generic failure router. Use this skill once the stack is already PTA, or when PTA-specific runtime, operator, backend, or CANN detail is needed.
 
-### 1. Check Torch_npu Error Code
+Always collect evidence first, then reason.
 
-Parse error message for `ERR<SubModule><ErrorCode>` format:
-- `ERR000xx` - PTA (PyTorch Ascend) framework errors
-- `ERR010xx` - OPS (operator) errors
-- `ERR020xx` - DIST (distributed) errors
-- `ERR030xx` - GRAPH (graph) errors
-- `ERR040xx` - PROF (profiler) errors
+## When to use
 
-If error code found:
-1. Extract SubModule and ErrorCode
-2. Check [Error Codes reference](references/error-codes.md) for known solutions
-3. If direct match → provide solution
-4. If partial match → proceed to Stage 2
+Use this skill when the user reports PTA runtime failures such as:
+- process crash, segfault, or abrupt exit
+- runtime exception from `torch`, `torch_npu`, ACLNN, or CANN
+- hang, timeout, or distributed communication failure
+- unsupported operator or backend path failure
+- device, runtime, HCCL, or CANN error codes
+- PTA test failures tied to `torch_npu`, CANN, or operator behavior
 
-### 2. Check Failure Showcase
+## When not to use
 
-Search failure showcase for matching patterns using keyword categories:
-- **Memory:** OOM, EL0004, 200000, 207018, OutOfMemoryError
-- **Hardware:** 107010, FORCE STOP, ECC, link error
-- **Distributed:** HCCL, timeout, broadcast, all_reduce, 107020
-- **Framework:** 107002, context empty, dispatcher not registered, PrivateUse1, low-level API, default_generators
-- **Test Framework:** device detection, device mismatch, index_fill, CUDA dependency, deprecation warning, CudaNonDefaultStream
-- **Operator:** custom ops, expanded_weights, aclnnIm2col, int4pack
-- **Environment:** libhccl.so, libascendcl.so, ASCEND_OPP_PATH
-- **Accuracy:** per_sample_grad, batch_threshold, numerical bias
+Do not use this skill for:
+- pure accuracy drift or numerical mismatch with no runtime failure
+- pure throughput, latency, or memory optimization requests
+- environment setup, bootstrap, or readiness-only checks
+- generic `ms` versus `pta` routing; that belongs to the higher-level `failure-agent`
 
-Search strategy:
-- Error keywords (from categories above)
-- Call stack patterns (operator names, functions)
-- Device/module combinations (Conv1d+InstanceNorm, distributed+HCCL, etc.)
+## Stage 0: Gather Evidence
 
-Reference: See [Searchable Keywords](references/failure-showcase.md#searchable-keywords) for complete category mapping.
+Collect or request the minimum evidence before diagnosis:
+- exact symptom and failing command
+- full traceback or error log
+- PyTorch version
+- torch_npu version
+- CANN version
+- hardware or device details, including distributed setup if applicable
+- recent change since last known good run
 
-If matching failure found:
-1. Show historical failure info
-2. Provide previously successful solution
-3. Ask user: "Does this solution work for your issue?"
-4. If yes → END Stage 1
-5. If no → proceed to Stage 2
-
-## Stage 2: Analyze Failure
-
-**Failure Orientation Strategy:** Platform → Scripts → torch_npu Framework → CANN
-
-### Step 1: Collect Evidence
-
-For each orientation layer, collect:
-- Platform: HW type, driver version, CANN version
-- Scripts: User code patterns, library calls, configurations
-- torch_npu Framework: Operator calls, parameters, debug logs
-- CANN: Error codes from ACL/HCCL/GE API returns, CANN logs (if available)
-
-### Step 2: Orient and Diagnose
-
-Apply orientation strategy in order:
-
-**Platform Level:**
-- Check NPU device health with `npu-smi info`
-- Verify hardware compatibility (device vs CANN version)
-- Check for hardware errors (107010 task abort, ECC errors)
-- If hardware issue → Provide hardware-specific fix → Validate with user
-
-**Script Level:**
-- Analyze user code for misuse (wrong device, wrong dtype, shape mismatches)
-- Check environment variables (CANN paths, log levels)
-- Review script patterns (repeated initialization, improper cleanup)
-- **Test Framework Specific Checks:**
-  - Device detection: Verify tests check for 'npu' not 'cuda' in device_type guards
-  - CUDA dependencies: Check for imports of torch.testing._internal.common_cuda
-  - Deprecation warnings: Verify CUDA-specific warnings (torch.cuda.amp.custom_fwd) aren't expected on NPU
-  - RNG handling: Check for default_generators access in functionalized RNG ops (empty on CPU-only builds)
-  - Low-level API usage: Detect torch._C._cuda_* calls that should be torch_npu._C._npu_*
-- If script issue → Provide code fix → Validate with user
-
-**torch_npu Framework Level:**
-- Check operator registration and availability
-- Verify parameter validation (types, shapes, constraints)
-- Review torch_npu API usage (correct order, proper handles)
-- **Dispatcher Registration Checks:**
-  - For "PrivateUse1 not registered" errors: Check if operator has NPU dispatcher entry in npu_native_functions.yaml
-  - Verify if operator exists in separate namespace (torch_npu.npu_* vs aten::_*)
-  - Example: torch_npu.npu_convert_weight_to_int4pack vs aten::_convert_weight_to_int4pack
-- **Low-Level API Gap Analysis:**
-  - Identify missing APIs: torch._C._cuda_* vs torch_npu._C._npu_* equivalents
-  - Common gaps: _cuda_setStream, _cuda_setDevice, _cuda_sleep, _cuda_attach_out_of_memory_observer
-  - Check if CANN lacks equivalent kernel (e.g., device-side sleep like cudaSleep)
-  - **Call Chain Comparison Method (CUDA vs NPU):**
-    1. Trace the CUDA call chain: User code → torch.* API → torch._C._cuda_* internal API → CUDA runtime → Device kernel (source in PyTorch aten/src/ATen/native/cuda/)
-    2. Trace the NPU call chain: User code → torch_npu.npu.* API → torch_npu._C._npu_* internal API → ACL runtime → CANN kernel (source in torch_npu/csrc/aten/)
-    3. Compare at each layer: API availability, Parameter mapping, Kernel presence
-    4. Use code search tools: Grep in aten/src/ATen/native/cuda/ for CUDA, Grep in csrc/aten/ for NPU
-    5. Check for format/signness differences: Int4pack: CUDA uses unsigned [0,15], NPU uses signed [-8,7]
-- Read [Torch_npu Operators reference](references/torch-npu-operators.md) for API details
-- If framework issue → Provide framework fix → Validate with user
-
-**CANN Level:**
-- Parse CANN error codes (100xxx series) using [Error Codes reference](references/error-codes.md)
-- Check CANN logs: `/var/log/npu/slog/*/device-*/plog/`
-- Compare with PyTorch operator expectations via [PyTorch Operators reference](references/pytorch-operators.md)
-- **Operator-Specific Behavioral Issues:**
-  - aclnnIm2col optimization: Triggers numerical differences for per_sample_grad when batch_size >= 32
-    - Root cause: PyTorch's call_for_per_sample_grads switches to unfold-based algorithm at THRESHOLD=32
-    - NPU uses CANN's aclnnIm2col optimization which changes floating-point operation order
-    - Solution: Use batch_size < 32 for testing, or increase tolerances (atol=1e-2, rtol=1e-3)
-  - Format Mismatches: Check for signedness and layout differences vs CUDA
-    - Example: int4pack has different signedness [-8,7] vs [0,15] and input layouts
-    - Value range differences: CUDA uses unsigned [0,15]; NPU uses signed [-8,7]
-  - Expanded Weights: Per-sample gradients may produce numerical differences in InstanceNorm, GroupNorm, LayerNorm
-- If CANN issue → Provide CANN-specific fix → Validate with user
-
-**Show Fix Advice:**
-```
-Analysis: [Failure type identified]
-Root Cause: [Specific cause]
-Solution: [Actionable steps]
-```
-
-### Step 3: Validate and Iterate
-
-After providing fix:
-1. Ask user: "Did this advice resolve your issue?"
-   - Yes → Proceed to Stage 3
-   - No → Collect additional evidence, re-orient at current or deeper level
-2. Never end Stage 2 unless user accepts fix
-
-## Stage 3: Accumulate Experience
-
-### Step 1: Report Analysis Summary
-
-Review analysis and extract key points:
-- **Failure Info:** Error message, context, environment
-- **Failure Type:** Platform/Scripts/Framework/CANN
-- **Root Cause:** Specific issue identified
-- **Solution:** Steps that resolved the issue
-
-Report to user as structured summary.
-
-### Step 2: Update Failure Showcase
-
-Decide if this failure should be added to showcase:
-- Is this a new failure pattern not captured before?
-- Is the solution distinct from existing entries?
-
-If yes, write to [Failure Showcase reference](references/failure-showcase.md):
-```yaml
-- failure_info: "[error keywords/context]"
-  observed_at: "[file:function or test location where observed]"
-  failure_type: "platform|scripts|framework|cann"
-  root_cause: "[specific cause]"
-  solution: "[actionable steps]"
-  last_seen: "[timestamp]"
-  occurrences: [count]
-```
-
-## Quick References
-
-- [Error Codes](references/error-codes.md) - Complete error code mappings
-- [Failure Showcase](references/failure-showcase.md) - Historical failures and solutions
-  - Searchable Keywords - Keyword categories for pattern matching (Memory, Hardware, Distributed, Framework, Test, Operator, Environment, Accuracy)
-- [Torch_npu Operators](references/torch-npu-operators.md) - Operator registration and API details
-- [PyTorch Operators](references/pytorch-operators.md) - PyTorch operator specifications
-
-## Diagnostic Commands
+Useful commands:
 
 ```bash
-# Device and Platform
-npu-smi info                                   # Device status
-cat /usr/local/Ascend/ascend-toolkit/version   # CANN version
+python -c "import torch; print(torch.__version__)"
 python -c "import torch_npu; print(torch_npu.__version__)"
-
-# CANN Logs
-tail -f /var/log/npu/slog/*/device-*/plog/*.log # CANN logs
-
-# Test Framework Diagnostics
-python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
-python -c "import torch; print('NPU available:', torch.npu.is_available())"
-python -c "import torch; print('Default generators:', torch._C._get_default_generators())"
-python -c "import torch; print(torch.ops.aten._convert_weight_to_int4pack)"
-python -c "import torch_npu; print(hasattr(torch_npu, 'npu_convert_weight_to_int4pack'))"
+cat /usr/local/Ascend/ascend-toolkit/version
+npu-smi info
 ```
 
-## Environment Variables
+If the user only gives a vague error snippet, ask for missing evidence first. Do not guess.
 
-- `ASCEND_OPP_PATH` - Operator compiler path
-- `ASCEND_GLOBAL_LOG_LEVEL` - Log level (0-4)
-- `TORCH_NPU_COMPACT_ERROR_OUTPUT=1` - Compact error output
-- `DISABLED_TESTS_FILE` - Skip unsupported tests
-- `ASCEND_LAUNCH_BLOCKING=1` - Synchronous execution for debugging
+## Stage 1: Capture Canonical Facts
 
-## Test Framework Detection Patterns
+Before searching for prior knowledge or proposing causes, capture these canonical facts in your reasoning and final output:
+- `stack`: `pta`
+- `error_signature`: one concise signature made from error code or exception type plus key context
+- `operator`: operator name if present
+- `component_or_layer`: failing component, subsystem, or layer if known
+- `platform_backend`: Ascend, device model, backend or runtime context
+- `environment`: key version facts such as PyTorch, torch_npu, CANN
+- `evidence_source`: traceback, log line, command output, or user description
+- `knowledge_hit_status`: `known_failure`, `operator`, or `none`
 
-Common test framework issues to watch for:
-- **Device type guards:** `if self.device_type == 'cuda'` should be `'npu'`
-- **CUDA imports:** `torch.testing._internal.common_cuda` may contain CUDA-specific lazy evaluation
-- **Low-level API gaps:** `torch._C._cuda_*` → `torch_npu._C._npu_*`
-- **Deprecation warnings:** CUDA-specific warnings don't exist on NPU
-- **RNG state access:** `torch.cuda.default_generators` is empty on CPU-only builds
+These facts are mandatory. If one is unknown, say it is unknown rather than inventing it.
+
+## Stage 2: Check Existing Knowledge
+
+1. Search known failure knowledge first.
+- If Factory query tooling is available, query `known_failure` cards first.
+- If Factory query tooling is not available, search local [failure-showcase](references/failure-showcase.md) as the no-tooling fallback.
+
+2. Search operator knowledge only when no known failure matches.
+- If Factory query tooling is available, consult `operator` cards after no `known_failure` match.
+- If Factory query tooling is not available, use local PTA references such as [torch-npu-operators](references/torch-npu-operators.md) and [cann-api-reference](references/cann-api-reference.md) as fallback material.
+
+3. Reuse known fixes carefully.
+- If a known failure or operator constraint clearly matches, explain why it applies.
+- Do not pretend a Factory lookup happened if tooling is unavailable.
+- Do not fabricate a knowledge hit. If no strong match exists, set `knowledge_hit_status` to `none`.
+
+## Stage 3: Diagnose the Failure
+
+Failure orientation for PTA:
+- Platform -> Scripts -> torch_npu Framework -> CANN
+
+Quick route:
+- hardware, ECC, heartbeat, link, or device task abort -> start at Platform
+- `ERRxxxxx`, unsupported operator, `PrivateUse1`, registration issues -> start at torch_npu Framework
+- CANN, ACLNN, `E[x]xxxx`, kernel, compile, runtime backend errors -> start at CANN
+- shape, dtype, device placement, or script misuse -> start at Scripts
+
+PTA-specific checks to preserve:
+- version compatibility among PyTorch, torch_npu, and CANN
+- wrong device placement or cross-device tensor operations
+- `device_type == 'cuda'` versus `'npu'` mistakes in tests
+- CUDA-only imports such as `torch.testing._internal.common_cuda`
+- `torch._C._cuda_*` versus `torch_npu._C._npu_*` API gaps
+- `PrivateUse1` or registration failures in `npu_native_functions.yaml`
+- operator behavior differences such as `int4pack`, `aclnnIm2col`, expanded weights, or norm-related precision drift when runtime failure symptoms point there
+
+For each diagnosis, provide:
+1. ranked root-cause hypotheses tied to evidence
+2. fix options or mitigations
+3. validation checks to confirm or reject the hypothesis
+
+Use this output format:
+
+1. Failure summary
+2. Canonical facts
+3. Knowledge hits (`known_failure`, `operator`, or `none`)
+4. Most likely causes (ranked)
+5. Validation checks
+6. Recommended fixes
+7. Risks and rollback notes
+8. Next action checklist
+9. Knowledge candidate or manual `report` suggestion if novel
+
+## Stage 4: Validate and Close
+
+After giving the diagnosis, ask the user to verify whether the proposed fix resolved the issue.
+
+If not fixed:
+- collect the new evidence
+- update the canonical facts if needed
+- continue diagnosis
+
+If fixed:
+- summarize symptom, root cause, fix, and validation result
+- if the case appears novel, output a manual knowledge candidate and suggest a manual `report` submission with kind `report`
+
+## Manual-only rule
+
+This is a prompt-first, manual skill.
+
+You must not:
+- update `failure-showcase.md`
+- auto-submit a Factory report
+- auto-write to any local or remote knowledge source
+- claim that a lookup or mutation happened if the required tooling is unavailable
+
+You may:
+- output a manual knowledge candidate for later curation
+- suggest that the user or a later workflow submit a manual `report`
+
+## Required behavior
+
+- You MUST collect evidence before proposing causes.
+- You MUST capture the canonical facts before deep diagnosis.
+- You MUST check `known_failure` before `operator` knowledge when tooling exists.
+- You MUST use local reference fallback when tooling is unavailable instead of pretending Factory access exists.
+- You MUST keep PTA scope boundaries clear and defer pure accuracy, performance, or setup cases.
+- You MUST ask for validation after recommending a fix.
+- Always state assumptions and unknowns.
+
+## References
+
+- [error-codes](references/error-codes.md)
+- [failure-showcase](references/failure-showcase.md)
+- [backend-diagnosis](references/backend-diagnosis.md)
+- [cann-api-reference](references/cann-api-reference.md)
+- [pytorch-operators](references/pytorch-operators.md)
+- [torch-npu-operators](references/torch-npu-operators.md)
+
+## Example prompts
+
+- "torch_npu throws ERR01003 on Ascend 910B. Help isolate the root cause."
+- "My DDP training hangs on HCCL after one rank crashes. Diagnose the PTA failure."
+- "A custom op works through the CANN C API but fails through op-plugin with kernel not found."
