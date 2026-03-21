@@ -1,6 +1,6 @@
 {
   "skill_name": "pta-failure-analyze",
-  "description": "Capability evals for pta-failure-analyze. Tests the agent's ability to handle novel, cross-layer, multi-turn, and ambiguous diagnostic scenarios beyond known failure patterns.",
+  "description": "Capability evals for pta-failure-analyze. Tests evidence-first PTA failure diagnosis, canonical fact capture, conditional knowledge lookup, and manual-only novel-failure handling.",
   "evals": [
     {
       "id": 1,

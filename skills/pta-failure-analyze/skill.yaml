@@ -1,0 +1,45 @@
+schema_version: "1.0.0"
+name: "pta-failure-analyze"
+display_name: "PTA Failure Analyze"
+description: "PTA-specialized manual failure diagnosis skill for torch_npu runtime failures on Ascend."
+version: "0.1.0"
+
+entry:
+  type: "manual"
+  path: "SKILL.md"
+
+inputs:
+  - name: "user_problem"
+    type: "string"
+    required: true
+    description: "Problem description, symptom, failing command, and user context."
+  - name: "error_log"
+    type: "string"
+    required: false
+    description: "Error log, traceback, or backend error snippet."
+  - name: "environment"
+    type: "string"
+    required: false
+    description: "Runtime environment details such as PyTorch, torch_npu, CANN, backend, and device."
+
+outputs:
+  report_schema: "skills/_shared/contract/report.schema.json"
+  out_dir_layout: "runs/<run_id>/out/"
+
+permissions:
+  network: "none"
+  filesystem: "workspace-write"
+
+dependencies:
+  tools:
+    - "bash"
+    - "rg"
+  python: []
+
+tags:
+  - "pta"
+  - "torch_npu"
+  - "ascend"
+  - "manual"
+  - "diagnosis"
+  - "failure"
