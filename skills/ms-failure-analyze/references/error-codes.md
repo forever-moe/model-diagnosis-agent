@@ -115,7 +115,7 @@ Applies to MindSpore running on Ascend NPU. Error code rules:
 
 ACLNN errors use a two-phase interface pattern: `aclnnXxxGetWorkspaceSize` → `aclnnXxx`.
 
-For the complete official ACLNN return code reference (including codes not listed below), see [docs/cann/aclnnApiError.md](../../../docs/cann/aclnnApiError.md). For per-API constraints and adaptation flow, see [CANN API Reference](cann-api-reference.md).
+For the complete official ACLNN return code reference (including codes not listed below), see [docs/cann/aclnnApiError.md](../../../docs/cann/aclnnApiError.md). For third-party ACLNN API doc usage rules, see [CANN API Reference](cann-api-reference.md).
 
 ### General Status Codes
 | Code | Name | Description |
@@ -136,6 +136,31 @@ For the complete official ACLNN return code reference (including codes not liste
 | 561107 | ACLNN_ERR_INNER_OPP_PATH_NOT_FOUND | ASCEND_OPP_PATH not configured |
 | 561108 | ACLNN_ERR_INNER_LOAD_JSON_FAILED | Failed to load operator kernel JSON |
 | 561112 | ACLNN_ERR_INNER_OPP_KERNEL_PKG_NOT_FOUND | Operator binary kernel package not found |
+
+### ACLNN First Actions
+
+Use these as the default first actions before reading third-party `aclnn_api_docs/`:
+
+| Code / Pattern | First Action |
+|------|-------------|
+| `161001` | Check for null or uninitialized tensors and missing optional inputs |
+| `161002` | Check parameter types, dtype promotion, shape/layout requirements, and unsupported argument combinations |
+| `361001` | Check CANN runtime/device logs first; treat as runtime failure unless logs point to a contract violation |
+| `561001` | Suspect shape inference first; review input shapes, dynamic shape handling, and output shape expectations |
+| `561002` | Check tensor dimensions, tiling limits, and whether the operator is being used outside supported size ranges |
+| `561003` | Check OPP/kernel package installation and MindSpore/CANN version compatibility |
+| `561107` | Check `ASCEND_OPP_PATH` and whether the CANN environment was sourced correctly |
+| `561112` | Check whether the required kernel package is present and loaded completely |
+
+### When to Read ACLNN API Docs
+
+Read third-party docs under `docs/cann/aclnn_api_docs/` only when:
+- Error information is still unclear after checking this document, `failure-showcase.md`, and `diagnosis-guide.md`
+- The log explicitly contains an `aclnnXxx` API name
+- The issue is clearly about dtype support, parameter support, shape/layout constraints, or optional parameter semantics
+- You need to verify whether MindSpore parameter handling matches the underlying ACLNN interface
+
+Do not read `aclnn_api_docs/` by default just because an ACLNN error code appears.
 
 ## CANN Inner Error Codes (Alphanumeric)
 
@@ -237,7 +262,7 @@ CPU errors typically manifest as standard Python exceptions or system-level erro
 
 ## See Also
 
-- [CANN API Reference](cann-api-reference.md) — ACLNN API constraints, adaptation flow, and per-API docs
+- [CANN API Reference](cann-api-reference.md) — How and when to read third-party ACLNN API docs
 - [Backend Diagnosis](backend-diagnosis.md) — Detailed per-backend diagnosis steps and further location techniques
 - [Failure Showcase](failure-showcase.md) — Historical failures indexed by error codes and keywords
 - [MindSpore API](mindspore-api.md) — API layers, execution modes, backend registration

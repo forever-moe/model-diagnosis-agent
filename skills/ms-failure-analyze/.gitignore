@@ -1,0 +1,7 @@
+deploy_logs/
+*.log
+*.patch
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

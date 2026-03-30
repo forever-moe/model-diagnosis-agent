@@ -1,5 +1,18 @@
 # MindSpore API Reference
 
+## API Index First
+
+When the diagnosis is about `mindspore.mint`, Primitive mapping, backend support,
+ACLNN paths, KBK support, wrappers, `func_op`, or scenario-dependent behavior,
+read [MindSpore API Index Consumption Guide](mindspore-api-index-guide.md) first.
+
+Use this document as the broad API landscape reference, and use the Mint API
+index artifacts for the fast path:
+
+- `docs/mindspore_api_index/mint_api_index.yaml`
+- `docs/mindspore_api_index/mindspore_api_analysis_methodology.md`
+- `docs/mindspore_api_index/mint_api_evidence.yaml` only when the main record is insufficient
+
 ## API Layer Hierarchy
 
 MindSpore provides multiple API layers. `mindspore.mint` is the recommended high-level interface; `mindspore.ops` is the lower-level operator layer; `mindspore.nn` provides traditional network modules.
@@ -344,6 +357,6 @@ Directory structures may change across MindSpore versions. Use keyword search in
 ## See Also
 
 - [Error Codes](error-codes.md) — Error code mappings for MindSpore exceptions, CANN, ACLNN, CUDA
-- [CANN API Reference](cann-api-reference.md) — ACLNN two-phase interface, adaptation flow, operator diagnostics
+- [CANN API Reference](cann-api-reference.md) — How and when to read third-party ACLNN API docs
 - [Backend Diagnosis](backend-diagnosis.md) — Per-backend diagnosis steps (Ascend/GPU/CPU)
 - [Failure Showcase](failure-showcase.md) — Historical failures and solutions

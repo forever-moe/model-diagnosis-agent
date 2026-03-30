@@ -16,7 +16,7 @@ Detailed per-backend diagnosis steps. Read the section matching the target backe
 - Parse ACLNN error codes for operator-level failures
 - Check CANN logs: `/var/log/npu/slog/*/device-*/plog/`
 - Check TBE/AKG compilation errors
-- Cross-reference with [CANN API Reference](cann-api-reference.md) for aclnn API constraints and adaptation flow
+- Cross-reference with [CANN API Reference](cann-api-reference.md) only when you need third-party ACLNN API contract details
 - **ACLNN adaptation-level diagnosis** (when error originates from operator development/adaptation):
   - Determine which adaptation path the operator uses (auto-generated vs Customize):
     - Auto-generated: YAML `dispatch.enable: True` without `Ascend:` field → check `aclnn_config.yaml` mapping
@@ -29,7 +29,7 @@ Detailed per-backend diagnosis steps. Read the section matching the target backe
     - **BPROP**: input/output count mismatch (backward inputs = forward inputs + 2), unused input marking, dynamic shape in bprop (`Conditional`/`ShapeCalc` missing)
     - **View ops**: strides calculation errors, `view: True`/`graph_view: True` YAML misconfiguration, fallback to ACLNN kernel
     - **Composite ops**: missing sub-operators in ACLNN call chain, `bprop_expander: False` without proper sub-op bprop
-  - Read [ACLNN Adaptation Reference](cann-api-reference.md) for detailed adaptation flow
+  - Read [Diagnosis Guide](diagnosis-guide.md#10-aclnn-adaptation-issues) for detailed adaptation flow
 - If CANN issue → Provide CANN-specific fix → Validate with user
 
 ## GPU Backend (CUDA)
@@ -116,6 +116,6 @@ Expected output to look for: [description of key log lines]
 ## See Also
 
 - [Error Codes](error-codes.md) — Error code lookup tables (CANN, ACLNN, CUDA, CPU)
-- [CANN API Reference](cann-api-reference.md) — ACLNN API constraints, adaptation flow, per-API docs
+- [CANN API Reference](cann-api-reference.md) — How and when to read third-party ACLNN API docs
 - [MindSpore API](mindspore-api.md) — API layers, execution modes, operator debugging
 - [Failure Showcase](failure-showcase.md) — Historical failures and solutions

@@ -1898,6 +1898,28 @@ Historical MindSpore failures and their solutions. Format:
 - occurrences: 1
 - issue_url: "https://e.gitee.com/mind_spore/dashboard?issue=IDC64M"
 
+### Floor_Divide Float16 Precision Difference Between MindSpore and PyTorch
+- failure_info: "precision, floor_divide, float16, MindSpore, PyTorch, Ascend, CPU"
+- observed_at: "manual verification: ms.Tensor(-6.02, fp16).floor_divide(ms.Tensor(-0.08856, fp16))"
+- backend: "ascend"
+- failure_type: "backend"
+- root_cause: "float16 precision boundary issue. When -6.02 and -0.08856 are converted to float16 (-6.01953125 and -0.08856201171875), division result is exactly 68.0. floor(68.0)=68, but true mathematical result is 67.9696..., floor should be 67. MindSpore Ascend returns 68, PyTorch returns 67. This is because float16 precision loss causes boundary value, and different frameworks handle this edge case differently."
+- solution: "Use float32 for computation to avoid precision loss: ms.Tensor(np.array(-6.02).astype(np.float32), dtype=ms.float32).floor_divide(ms.Tensor(np.array(-0.08856).astype(np.float32), dtype=ms.float32)) returns 67 correctly."
+- last_seen: "2026-03-30"
+- occurrences: 1
+- issue_url: "N/A"
+
+### mint.pow Complex Type Not Supported
+- failure_info: "TypeError, mint.pow, Complex64, Complex128, PowTensorScalar, not supported"
+- observed_at: "ms.mint.pow(Tensor(1+1j, dtype=ms.complex64), 1.0)"
+- backend: "ascend"
+- failure_type: "framework"
+- root_cause: "MindSpore framework type check in pow_tensor_scalar.cc rejects complex types. However, ACLNN backend supports complex types (verified in aclnnPowTensorScalar&aclnnInplacePowTensorScalar.md). This is a false positive - the framework type check is too strict."
+- solution: "Add kNumberTypeComplex64 and kNumberTypeComplex128 to valid_types in PowCheckAndInferType function in mindspore/ops/infer/ops_func_impl/pow_tensor_scalar.cc, and return input_type directly for complex types."
+- last_seen: "2026-03-30"
+- occurrences: 1
+- issue_url: "N/A"
+
 ### Bert Network Randomly Add ms_function, 8-Card Training, Error: DropoutDoMask-op0 op dtype is not same
 - failure_info: "GE, cast, DropoutDoMask, dtype, ms_function"
 - observed_at: "test_ms_jit_network_002_mindir_infer"

@@ -1,0 +1,33 @@
+# MindSpore Mint API Index Rulebook
+
+- Main index: `mint_api_index.yaml`.
+- Evidence side table: `mint_api_evidence.yaml`.
+- Review queue: `mint_api_review_queue.yaml`.
+- All paths are relative to the user-provided MindSpore repo root. No absolute paths. No line numbers.
+- `api_level`: `operator_api`, `wrapper_api`, `module_api`.
+- `implementation_type`: `single_op`, `multi_overload_op`, `composite_op`, `alias`, `high_level_module`, `runtime_utility`.
+- `semantic_kind`: `direct_operator`, `multi_overload_operator`, `func_op_operator`, `high_level_module`, `scenario_dependent_module`, `runtime_utility`.
+- `trust_level`: `direct_fact`, `inherited_fact`, `scenario_dependent`, `expansion_based`, `not_applicable`.
+- `fact_origin`: `direct`, `inherited_from_construct`, `inherited_from_alias`, `expansion_derived`, `not_applicable`.
+- `graph_support_kind`: `direct_kernel`, `func_op_expansion`, `fallback`, `scenario_dependent`, `unknown`, `not_applicable`.
+- `support_reason_kind`: `direct_primitive_runtime`, `customize_to_aclnn`, `composite_runtime`, `func_op_expansion`, `scenario_dependent`, `runtime_utility`, `unknown`.
+- `unknown_reason`: `unresolved_static_chain`, `func_op_expansion`, `scenario_dependent`, `not_applicable`, `missing_kbk_evidence`, `missing_runtime_kernel_evidence`, or empty when no unknown explanation is needed.
+- `pynative_support` and `graph_kbk_o0_support` are matrices over `ascend/cpu/gpu` with values `yes`, `no`, `unknown`.
+- `llm_summary` is the high-density first-read view for LLM consumption. It compresses existing structured facts without introducing new ones.
+- `llm_warning` captures the main boundary that prevents a direct naive interpretation.
+- `support_summary` is a template summary for fast reading. It must not introduce new facts beyond structured fields.
+- `aclnn` contains `mode`, `interfaces`, `effective_interfaces`, `path_kind`.
+- `aclnn.mode`: `direct`, `indirect`, `none`, `unknown`, `not_applicable`.
+- `aclnn.path_kind`: `direct_aclnn`, `customize_to_aclnn`, `composite_to_aclnn`, `none`, `unknown`, `not_applicable`.
+- `grad.mode`: `explicit_bprop`, `grad_op`, `autodiff`, `not_applicable`, `unknown`.
+- Records flagged with `func_op` come from `ops/op_def/func_op` and usually have `bprop_expander: False`. Their GRAPH semantics are expansion-based, not direct-kernel based.
+- `func_op_expands_to` lists downstream primitives statically extracted from `ccsrc/frontend/operator/meta_dsl/func_op/*.cc`.
+- `multi_overload_op` means one public API maps to multiple primitive overloads. Do not interpret it as a single primitive API.
+- `high_level_module` with `construct_mapped` means primitive/support/aclnn/grad facts are inherited through `construct`, not directly defined by the class itself.
+- `runtime_utility` means primitive mapping is intentionally treated as not applicable.
+- `terminal_symbol` and `terminal_kind` explain the final static resolution endpoint in the evidence table, for example `auto_generate_function`, `ops_wrapper`, `c_expression_instance`, `primitive_instance`, `func_op`.
+- `prelude_calls` in the evidence table records helper/setup calls seen before the terminal operator call, such as seed generation or dtype preparation.
+- `dispatch.enable=True` only means an adapter layer is generated. It is not a final backend support conclusion.
+- PYNATIVE support combines `dispatch`, CPU/GPU kernel registration, and Ascend pyboost/aclnn evidence.
+- GRAPH `jit_level='O0'` support is judged separately: Ascend uses KBK aclnn evidence; CPU/GPU use kernel factory or fallback evidence.
+- If `dispatch.{platform}=None`, that platform adapter is not generated and the support result should prefer `no`.

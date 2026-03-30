@@ -42,6 +42,8 @@ If no match found → continue to step 2.
 
 Parse error message to determine error source. MindSpore errors come in several forms:
 
+> **Reference:** [Diagnosis Guide — Section 12: Quick Reference Error Code Mapping](references/diagnosis-guide.md#12-quick-reference-error-code-mapping) provides a quick lookup table for error codes and their corresponding problem domains. For systematic problem classification, see [Section 1: Problem Classification Overview](references/diagnosis-guide.md#1-problem-classification-overview).
+
 **Python Exceptions (MindSpore Framework):**
 - `RuntimeError` — device errors, operator execution failures, graph compilation errors
 - `ValueError` — parameter validation, shape mismatches, invalid configurations
@@ -81,6 +83,8 @@ If error code found:
 ### Quick Route (skip levels when evidence is clear)
 
 Based on Stage 1 error pattern, jump directly to the most likely level:
+
+> **Reference:** [Diagnosis Guide — Section 1.2: Decision Tree for Problem Classification](references/diagnosis-guide.md#12-decision-tree-for-problem-classification) provides a decision tree for automated problem routing based on error keywords and patterns.
 
 | Stage 1 Finding | Start At | Rationale |
 |-----------------|----------|-----------|
@@ -158,6 +162,10 @@ Apply orientation strategy (start at the level identified by Quick Route, then e
 - Check operator availability on target backend (`Supported Platforms: Ascend GPU CPU`)
 - Verify operator parameter constraints (types, shapes, value ranges)
 - Review graph compilation errors (IR optimization, type inference failures)
+- For `mindspore.mint` / Primitive / ACLNN / backend-support / wrapper / `func_op` / scenario-dependent questions, read the API index before falling back to source code:
+  - first read [MindSpore API Index Consumption Guide](references/mindspore-api-index-guide.md)
+  - then read the relevant record from `docs/mindspore_api_index/mint_api_index.yaml`
+  - only read `mint_api_evidence.yaml` if you must confirm `terminal_symbol`, `construct` inheritance, `aclnn.effective_interfaces`, `func_op_expands_to`, or explain `llm_warning` / `unknown_reason`
 - Identify which API layer the user is using and check accordingly:
   - **`mindspore.mint`** (preferred high-level API, PyTorch-compatible):
     - `mint.*` functions — check view-vs-copy semantics (`@jit_view_unsupported` on squeeze/flatten/reshape/t/narrow/split/broadcast_to)
@@ -183,7 +191,31 @@ Apply orientation strategy (start at the level identified by Quick Route, then e
 **Backend Level (Ascend / GPU / CPU):**
 
 Read the matching section in [Backend Diagnosis Reference](references/backend-diagnosis.md) for detailed steps:
+
+> **Reference:** [Diagnosis Guide](references/diagnosis-guide.md) provides domain-specific diagnosis guidance:
+> - [Section 2: Memory Issues](references/diagnosis-guide.md#2-memory-issues) — OOM, memory corruption, HBM/VRAM exhaustion
+> - [Section 3: Hardware/Device Issues](references/diagnosis-guide.md#3-hardwaredevice-issues) — heartbeat lost, ECC errors, device timeout
+> - [Section 4: Distributed Communication Issues](references/diagnosis-guide.md#4-distributed-communication-issues) — HCCL/NCCL errors, timeout, rank configuration
+> - [Section 5: Operator Issues](references/diagnosis-guide.md#5-operator-issues) — TBE/ACLNN errors, operator not supported
+> - [Section 6: Graph Compilation Issues](references/diagnosis-guide.md#6-graph-compilation-issues) — static graph errors, type inference, context empty
+> - [Section 7: Precision Issues](references/diagnosis-guide.md#7-precision-issues) — float16 instability, seed-dependent errors, backend differences, MindSpore vs Torch_NPU comparison
+> - [Section 8: Environment/Configuration Issues](references/diagnosis-guide.md#8-environmentconfiguration-issues) — CANN missing, version mismatch, profiler issues
+> - [Section 9: API Usage Issues](references/diagnosis-guide.md#9-api-usage-issues) — mint API pitfalls, return type confusion, parameter validation
+> - [Section 10: ACLNN Adaptation Issues](references/diagnosis-guide.md#10-aclnn-adaptation-issues) — gen_ops.py, PyBoost, KBK, BPROP errors
+> - [Section 11: Parallel/Distributed Training Issues](references/diagnosis-guide.md#11-parallel-distributed-training-issues) — pipeline parallel, semi-auto parallel, optimizer parallel
+
 - **Ascend** — CANN/ACLNN error codes, CANN logs, TBE/AKG compilation, ACLNN adaptation-level diagnosis (gen_ops.py → GeneralInfer → PyBoost/KBK → BPROP → View/Composite)
+  - **ACLNN API Documentation:** Only read third-party docs from [aclnn_api_docs/](../../../docs/cann/aclnn_api_docs/) when one of these is true:
+    1. Error info is still insufficient after checking `failure-showcase.md`, `error-codes.md`, and `diagnosis-guide.md`
+    2. The log explicitly contains an `aclnnXxx` API name
+    3. The failure is clearly about dtype support, parameter support, shape/layout constraints, or optional parameter semantics
+    4. You need to verify whether MindSpore parameter handling matches the underlying ACLNN interface
+  - When reading third-party ACLNN docs:
+    1. Extract the API name from stack traces, adaptation code, or nearby logs
+    2. Search [aclnn_api_docs/](../../../docs/cann/aclnn_api_docs/) directly by API name or API stem
+    3. Focus only on function prototype, parameter constraints, dtype support, shape/layout rules, and failure conditions
+    4. In the answer, include the ACLNN API name, concrete doc path, extracted constraints, and how they map to the current error
+  - For the read workflow only, see [CANN API Reference](references/cann-api-reference.md)
 - **GPU** — CUDA errors (`CUDA_LAUNCH_BLOCKING=1`), NCCL distributed, cuDNN, compute capability
 - **CPU** — System resources, operator availability, threading config, segfault diagnosis
 
@@ -273,13 +305,75 @@ First, search [Failure Showcase reference](references/failure-showcase.md) for m
 - occurrences: [count]
 ```
 
+### Step 3: Update Diagnosis Guide
+
+After updating `failure-showcase.md`, evaluate whether `diagnosis-guide.md` needs synchronization:
+
+> **Reference:** [Diagnosis Guide — Document Update Mechanism](references/diagnosis-guide.md#document-update-mechanism) provides complete update triggers, workflow, and quality assurance checklist.
+
+**Quick evaluation checklist:**
+- [ ] Does this case introduce a **new error code**? → Update Section 12: Error Code Mapping
+- [ ] Does this case represent a **new problem domain**? → Consider adding new section
+- [ ] Does this case require **new diagnosis steps**? → Update corresponding section
+- [ ] Does this case have a **novel solution approach**? → Update solutions table
+- [ ] Does this case **consolidate similar patterns**? → Refactor related sections
+
+**If any checklist item is YES**, update the corresponding section in `diagnosis-guide.md`:
+1. Add/update error patterns and identification features
+2. Add/update diagnosis steps
+3. Add/update solutions table
+4. Update case reference in Appendix: Case Index
+5. Increment version number following [Version Increment Rules](references/diagnosis-guide.md#version-increment-rules)
+6. Update `Last Updated` date
+
+## Stage 4: Validate and Close
+
+**Default assumption**: The local machine does NOT have Ascend/GPU hardware or the required runtime environment to execute verification tests. Do NOT attempt to run test commands locally unless the user explicitly confirms the local machine can run them.
+
+After giving the diagnosis and proposed fix:
+1. Ask the user whether they need help deploying the fix to a **remote server** for compilation and verification.
+2. If the user confirms remote verification → follow the [Remote Deploy & Verify](references/remote-deploy-verify.md) workflow.
+3. If the user prefers to verify on their own (locally or remotely) → wait for them to report the result.
+4. After remote verification completes, return to this stage to confirm final resolution.
+
+**Remote Deploy Workflow Overview:**
+
+```
+collect → gather context → preflight → sync (dry-run → confirm → execute)
+  → build (if C++ changed) → install → run → summarize → return to Stage 4
+```
+
+**Quick path for test-only changes:**
+
+```
+sync-run   (= sync + run in one step, skipping build)
+```
+
+See [Remote Deploy & Verify Reference](references/remote-deploy-verify.md) for detailed workflow and configuration.
+
 ## Quick References
 
 - [Error Codes](references/error-codes.md) - Complete error code mappings (MindSpore + CANN + ACLNN)
 - [Failure Showcase](references/failure-showcase.md) - Historical failures and solutions
+- [Diagnosis Guide](references/diagnosis-guide.md) - Systematic problem classification, error pattern identification, and diagnosis direction mapping (v1.0)
 - [MindSpore API](references/mindspore-api.md) - API system (mint/ops/nn), backend registration, operator patterns
-- [CANN API Reference](references/cann-api-reference.md) - CANN aclnn API index and documentation pointers
+- [MindSpore API Index Guide](references/mindspore-api-index-guide.md) - When and how to consume the Mint API index and methodology docs
+- [CANN API Reference](references/cann-api-reference.md) - How and when to read third-party ACLNN API docs
 - [Backend Diagnosis](references/backend-diagnosis.md) - Per-backend (Ascend/GPU/CPU) detailed diagnosis, log analysis, further location techniques
+- [Remote Deploy & Verify](references/remote-deploy-verify.md) - Remote deployment and verification workflow for MindSpore development
+
+## Skill Directory and Tool Paths
+
+This skill's root directory is the folder containing this `SKILL.md` file.
+All tool scripts live under `<skill_dir>/tools/` and all references under `<skill_dir>/references/`.
+
+When executing tool scripts via Shell, always resolve the **full absolute path** first. For example, if this SKILL.md is at `/repo/skills/ms-failure-analyze/SKILL.md`, then:
+
+```bash
+python /repo/skills/ms-failure-analyze/tools/remote_deploy_verify.py collect --local-root /path/to/mindspore
+```
+
+Do NOT rely on relative paths like `python tools/remote_deploy_verify.py` — the shell working directory is usually the workspace root, not the skill directory.
 
 ## Diagnostic Commands
 

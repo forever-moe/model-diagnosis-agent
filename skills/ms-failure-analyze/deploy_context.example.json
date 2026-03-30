@@ -1,0 +1,43 @@
+{
+  "remote": {
+    "host": "10.0.1.100",
+    "user": "dev",
+    "port": 22
+  },
+  "paths": {
+    "local_root": "/home/user/mindspore",
+    "remote_root": "/home/dev/mindspore"
+  },
+  "exec_context": {
+    "type": "bare",
+    "env_setup": "source /home/dev/env.sh && conda activate ms_dev && source /usr/local/Ascend/ascend-toolkit/set_env.sh"
+  },
+  "build": {
+    "python_version": "3.9",
+    "backend": "ascend",
+    "mode": "auto"
+  },
+  "verify": {
+    "command": "pytest tests/ut/ops/test_xxx.py -xvs",
+    "timeout": 600,
+    "env_vars": {
+      "CONTEXT_DEVICE_TARGET": "Ascend",
+      "CONTEXT_MODE": "0",
+      "GLOG_v": "2"
+    },
+    "output_tail_lines": 15,
+    "auto_rollback": false
+  },
+  "sync": {
+    "strategy": "patch",
+    "extra_mappings": [],
+    "extra_files": []
+  },
+  "timeouts": {
+    "exec": 60,
+    "build": 1800,
+    "install": 300,
+    "run": 600,
+    "preflight": 60
+  }
+}

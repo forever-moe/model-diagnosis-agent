@@ -1,0 +1,187 @@
+support_should_be_no_but_still_unknown: []
+aclnn_effective_interface_missing: []
+primitive_missing_cpu_gpu_kernel_mapping: []
+graph_ascend_kbk_unclosed:
+- api: mindspore.mint.Identity
+  status_summary: 'high_level_module; primitive=Identity; pynative: Ascend=unknown,
+    Cpu=yes, Gpu=yes; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes; grad=explicit_bprop'
+  evidence_ref: mindspore.mint.Identity
+- api: mindspore.mint.cdist
+  status_summary: 'single_op; primitive=Cdist; pynative: Ascend=unknown, Cpu=yes,
+    Gpu=yes; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes; grad=explicit_bprop'
+  evidence_ref: mindspore.mint.cdist
+- api: mindspore.mint.dstack
+  status_summary: 'composite_op; primitive=Reshape; pynative: Ascend=unknown, Cpu=yes,
+    Gpu=yes; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes; grad=explicit_bprop'
+  evidence_ref: mindspore.mint.dstack
+- api: mindspore.mint.nn.Identity
+  status_summary: 'high_level_module; primitive=Identity; pynative: Ascend=unknown,
+    Cpu=yes, Gpu=yes; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes; grad=explicit_bprop'
+  evidence_ref: mindspore.mint.nn.Identity
+- api: mindspore.mint.ravel
+  status_summary: 'single_op; primitive=Reshape; pynative: Ascend=unknown, Cpu=yes,
+    Gpu=yes; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes; grad=explicit_bprop'
+  evidence_ref: mindspore.mint.ravel
+- api: mindspore.mint.reshape
+  status_summary: 'single_op; primitive=Reshape; pynative: Ascend=unknown, Cpu=yes,
+    Gpu=yes; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes; grad=explicit_bprop'
+  evidence_ref: mindspore.mint.reshape
+- api: mindspore.mint.squeeze
+  status_summary: 'single_op; primitive=Squeeze; pynative: Ascend=unknown, Cpu=yes,
+    Gpu=yes; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes; grad=explicit_bprop'
+  evidence_ref: mindspore.mint.squeeze
+- api: mindspore.mint.unbind
+  status_summary: 'single_op; primitive=UnstackExtView; pynative: Ascend=unknown,
+    Cpu=yes, Gpu=no; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes via fallback;
+    grad=explicit_bprop'
+  evidence_ref: mindspore.mint.unbind
+- api: mindspore.mint.unsqueeze
+  status_summary: 'single_op; primitive=ExpandDims; pynative: Ascend=unknown, Cpu=yes,
+    Gpu=yes; graph_kbk_o0: Ascend=unknown, Cpu=yes, Gpu=yes; grad=explicit_bprop'
+  evidence_ref: mindspore.mint.unsqueeze
+class_api_construct_chain_unclosed: []
+simple_wrapper_missing: []
+true_unresolved_mapping: []
+primitive_mapping_not_applicable:
+- api: mindspore.mint.distributed.P2POp
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.P2POp
+- api: mindspore.mint.distributed.all_gather
+  status_summary: distributed communication operator; primitive=DistCommAllGather;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.all_gather
+- api: mindspore.mint.distributed.all_gather_into_tensor
+  status_summary: distributed communication operator; primitive=DistCommAllGatherIntoTensor;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.all_gather_into_tensor
+- api: mindspore.mint.distributed.all_gather_into_tensor_uneven
+  status_summary: distributed communication operator; primitive=DistCommAllGatherIntoTensorUneven;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.all_gather_into_tensor_uneven
+- api: mindspore.mint.distributed.all_gather_object
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.all_gather_object
+- api: mindspore.mint.distributed.all_reduce
+  status_summary: distributed communication operator; primitive=DistCommAllReduce;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.all_reduce
+- api: mindspore.mint.distributed.all_to_all
+  status_summary: distributed communication operator; primitive=Concat; standard kernel/aclnn
+    support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.all_to_all
+- api: mindspore.mint.distributed.all_to_all_single
+  status_summary: distributed communication operator; primitive=DistCommAllToAllVSingle;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.all_to_all_single
+- api: mindspore.mint.distributed.barrier
+  status_summary: distributed communication operator; primitive=DistCommBarrier; standard
+    kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.barrier
+- api: mindspore.mint.distributed.batch_isend_irecv
+  status_summary: distributed communication operator; primitive=DistCommBatchIsendIrecv;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.batch_isend_irecv
+- api: mindspore.mint.distributed.broadcast
+  status_summary: distributed communication operator; primitive=DistCommBroadcast;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.broadcast
+- api: mindspore.mint.distributed.broadcast_object_list
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.broadcast_object_list
+- api: mindspore.mint.distributed.destroy_process_group
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.destroy_process_group
+- api: mindspore.mint.distributed.gather
+  status_summary: distributed communication operator; primitive=GatherD; standard
+    kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.gather
+- api: mindspore.mint.distributed.gather_object
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.gather_object
+- api: mindspore.mint.distributed.get_backend
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.get_backend
+- api: mindspore.mint.distributed.get_global_rank
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.get_global_rank
+- api: mindspore.mint.distributed.get_group_rank
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.get_group_rank
+- api: mindspore.mint.distributed.get_process_group_ranks
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.get_process_group_ranks
+- api: mindspore.mint.distributed.get_rank
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.get_rank
+- api: mindspore.mint.distributed.get_world_size
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.get_world_size
+- api: mindspore.mint.distributed.init_process_group
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.init_process_group
+- api: mindspore.mint.distributed.irecv
+  status_summary: distributed communication operator; primitive=DistCommIrecv; standard
+    kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.irecv
+- api: mindspore.mint.distributed.is_available
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.is_available
+- api: mindspore.mint.distributed.is_initialized
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.is_initialized
+- api: mindspore.mint.distributed.isend
+  status_summary: distributed communication operator; primitive=DistCommIsend; standard
+    kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.isend
+- api: mindspore.mint.distributed.new_group
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.new_group
+- api: mindspore.mint.distributed.recv
+  status_summary: distributed communication operator; primitive=DistCommIrecv; standard
+    kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.recv
+- api: mindspore.mint.distributed.recv_object_list
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.recv_object_list
+- api: mindspore.mint.distributed.reduce
+  status_summary: distributed communication operator; primitive=DistCommReduce; standard
+    kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.reduce
+- api: mindspore.mint.distributed.reduce_scatter
+  status_summary: distributed communication operator; primitive=DistCommReduceScatter;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.reduce_scatter
+- api: mindspore.mint.distributed.reduce_scatter_tensor
+  status_summary: distributed communication operator; primitive=DistCommReduceScatterTensor;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.reduce_scatter_tensor
+- api: mindspore.mint.distributed.reduce_scatter_tensor_uneven
+  status_summary: distributed communication operator; primitive=DistCommReduceScatterTensorUneven;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.reduce_scatter_tensor_uneven
+- api: mindspore.mint.distributed.scatter
+  status_summary: distributed communication operator; primitive=Scatter,ScatterValue;
+    standard kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.scatter
+- api: mindspore.mint.distributed.scatter_object_list
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.scatter_object_list
+- api: mindspore.mint.distributed.send
+  status_summary: distributed communication operator; primitive=DistCommIsend; standard
+    kernel/aclnn support mapping not applicable
+  evidence_ref: mindspore.mint.distributed.send
+- api: mindspore.mint.distributed.send_object_list
+  status_summary: runtime utility; operator mapping not applicable
+  evidence_ref: mindspore.mint.distributed.send_object_list
+- api: mindspore.mint.optim.Adam
+  status_summary: optimizer module; operator mapping not applicable
+  evidence_ref: mindspore.mint.optim.Adam
+- api: mindspore.mint.optim.AdamW
+  status_summary: optimizer module; operator mapping not applicable
+  evidence_ref: mindspore.mint.optim.AdamW
+- api: mindspore.mint.optim.FusedAdamW
+  status_summary: optimizer module; operator mapping not applicable
+  evidence_ref: mindspore.mint.optim.FusedAdamW
+- api: mindspore.mint.optim.SGD
+  status_summary: optimizer module; operator mapping not applicable
+  evidence_ref: mindspore.mint.optim.SGD
